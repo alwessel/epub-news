@@ -83,8 +83,8 @@ class heiseDe(BasicNewsRecipe):
         if os.environ.get("HEISE_USER") is not None and os.environ.get("HEISE_PASSWORD") is not None:
             br.open('https://www.heise.de/sso/login')
             br.select_form(predicate=select_form)
-            br['username']   = os.environ["HEISE_USER"]
-            br['password'] = os.environ["HEISE_PASSWORD"]
+            br['login-user']   = os.environ["HEISE_USER"]
+            br['login-password'] = os.environ["HEISE_PASSWORD"]
             br.submit()
         else: print("HEISE_USER and HEISE_PASSWORD env parameter missing for login, skipped.")
         return br
