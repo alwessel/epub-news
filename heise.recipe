@@ -73,7 +73,7 @@ class heiseDe(BasicNewsRecipe):
     ]
 
     def get_article_url(self, article):
-        return article.link + "&view=print"
+        return article.link + "&view=print&seite=all"
 
     def get_browser(self):
         br = BasicNewsRecipe.get_browser(self)

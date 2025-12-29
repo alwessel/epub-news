@@ -6,17 +6,16 @@ on:
     # it needs up to 15 min to start    
   workflow_dispatch:
 jobs:
-  publish-heise:
+  generate-heise-epub:
     runs-on: ubuntu-latest
     container:
-      image: linuxserver/calibre:latest    
+      image: linuxserver/calibre:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: publish-heise-to-gdrive
+      - name: Generate Heise EPUB
         env:
-            GDRIVE_ACCOUNT_BASE64: ${{ secrets.GDRIVE_ACCOUNT_BASE64 }}
             HEISE_USER: ${{ secrets.HEISE_USER }}
-            HEISE_PASSWORD: ${{ secrets.HEISE_PASSWORD }}              
+            HEISE_PASSWORD: ${{ secrets.HEISE_PASSWORD }}
         run: |
-            bash publish-heise-to-gdrive.sh
+            bash generate-heise-epub.sh
