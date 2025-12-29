@@ -2,7 +2,7 @@ __license__ = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid at kovidgoyal.net>'
 
 '''
-Fetch heise.
+Fetch Heise Newsticker Classic.
 '''
 
 from calibre.web.feeds.news import BasicNewsRecipe
@@ -12,79 +12,138 @@ class heiseDe(BasicNewsRecipe):
 
     title = 'heise'
     description = 'Computernews from Germany'
-    __author__ = 'Oliver Niesner'
+    __author__ = 'Alexander Wessel'
     use_embedded_content = False
     language = 'de'
     timefmt = ' [%d %b %Y]'
-    max_articles_per_feed = 50
     no_stylesheets = True
 
-    extra_css = '''
-    .bild_links, .bild_bu_links {
-        float:left;
-        line-height:105%;
-        margin:12px 1.4em 12px 0;
-    }
+    # Compress images to keep article size under control
+    compress_news_images = True
+    compress_news_images_max_size = 100  # Max size in KB per image (Calibre compresses to ~this size)
+    scale_news_images = (1280, 720)  # Max width and height in pixels
 
-    .bild_rechts, .bild_bu {
-            float:right;
-            line-height:105%;
-            margin:12px 0 12px 1em;
-            text-align:right;
-    }
+    remove_tags = [
+        dict(name='header'),
+        dict(name='footer'),
+        dict(name='div', attrs={'id': 'wtma_teaser_ho_vertrieb_inline_branding'}),
+        dict(name='div', attrs={'id': 'topnavimodule'}),
+        dict(name='div', attrs={'class': 'notification-links'}),
+        dict(name='nav')
+       ]
 
-    .bild_zentriert {
-            clear:both;
-            line-height:105%;
-            margin:.2em auto;
-            text-align:center;
-    }
+    def preprocess_html(self, soup):
+        # Handle Heise's custom <a-img> lazy-loaded images
+        for a_img in soup.find_all('a-img'):
+            # Get the real image URL from the a-img element
+            img_src = a_img.get('src')
+            if img_src and not img_src.startswith('data:'):
+                # Create a new img tag with the real source
+                new_img = soup.new_tag('img')
+                new_img['src'] = img_src
 
-    span.bild_links, span.bild_rechts, span.bild_zentriert {
-            display:block;
-    }
-    '''
+                # Copy other useful attributes
+                if a_img.get('alt'):
+                    new_img['alt'] = a_img['alt']
+                if a_img.get('width'):
+                    new_img['width'] = a_img['width']
+                if a_img.get('height'):
+                    new_img['height'] = a_img['height']
 
-    remove_tags = [dict(id='navi_bottom'),
-                   dict(id='software_tabbox'),
-                   dict(id='heisetopnavi_sub_container'),
-                   dict(id='navi_login'),
-                   dict(id='heisetopnavi_search'),
-                   dict(id='themen_aktuell'),
-                   dict(id='navi_top'),
-                   dict(id='logo_bereich'),
-                   dict(name='div', attrs={'class': 'news_logo'}),
-                   dict(name='div', attrs={'class': 'heisetopnavi_header'}),
-                   dict(name='p', attrs={'class': 'teasermitbildundtext'}),
-                   dict(name='div', attrs={'class': 'news_foren'}),
-                   dict(name='p', attrs={'class': 'news_navi'}),
-				   dict(name='div', attrs={'class': 'ring-grid-left-box'}),
-				   dict(name='div', attrs={'class': 'ring-grid-right-box'}),
-				   dict(name='div', attrs={'class': 'ring-simple-menu--wrapper'}),
-				   dict(name='div', attrs={'class': 'breadcrumbs-widget'})
-				   ]
+                # Replace the a-img element with the new img tag
+                a_img.replace_with(new_img)
 
-    remove_tags_after = [dict(name='div', attrs={'class': 'news_foren'}),
-						 dict(name='div', attrs={'class': 'footer-widget-wrapper'})
-	]
+        return soup
 
-    feeds = [
-        ('heise online', 'http://www.heise.de/newsticker/heise.rdf')
-    ]
+    def parse_index(self):
+        from urllib.parse import urljoin
 
-    def get_article_url(self, article):
-        return article.link + "&view=print&seite=all"
+        # Get max article count from environment variable, default to 100
+        max_articles = int(os.environ.get("HEISE_ARTICLE_COUNT", "100"))
+        self.log(f'Maximum articles to fetch: {max_articles}')
+
+        articles = []
+        base_url = 'https://www.heise.de'
+        total_articles = 0
+
+        # Loop through pages 1-5 of the newsticker classic
+        for page_num in range(1, 6):
+            if total_articles >= max_articles:
+                self.log(f'Reached maximum article count ({max_articles}), stopping')
+                break
+            page_url = f'https://www.heise.de/newsticker/classic/seite-{page_num}/'
+
+            self.log(f'Fetching page {page_num}: {page_url}')
+            soup = self.index_to_soup(page_url)
+
+            # Find all article elements
+            page_articles = []
+            for article in soup.find_all('article'):
+                if total_articles >= max_articles:
+                    break
+
+                # Skip sponsored articles
+                article_classes = article.get('class', [])
+                if 'a-article-teaser--sponsored' in article_classes:
+                    continue
+
+                # Find the first link in the article
+                link_elem = article.find('a')
+                if not link_elem or not link_elem.get('href'):
+                    continue
+
+                # Skip template placeholders (contains ${...})
+                href = link_elem.get('href', '')
+                if '${' in href:
+                    continue
+
+                # Get the URL
+                url = urljoin(base_url, href)
+
+                # Get the title from the title attribute of the link
+                title = link_elem.get('title', '').strip()
+
+                # Skip template placeholders in title
+                if '${' in title or not title:
+                    # Fallback to link text if no title attribute or template
+                    title = link_elem.get_text(strip=True) or ''
+                    if '${' in title or not title:
+                        continue
+
+                # Get the description from any <p> tag in the article
+                desc_elem = article.find('p')
+                description = desc_elem.get_text(strip=True) if desc_elem else ''
+
+                page = {'title': title,
+                        'url': self.get_article_url(url),
+                        'description': description
+                       }
+                page_articles.append(page)
+                self.log(f'Found page {page}')
+                total_articles += 1
+
+            if page_articles:
+                articles.append((f'Seite {page_num}', page_articles))
+                self.log(f'Found {len(page_articles)} articles on page {page_num} (total: {total_articles})')
+
+        return articles
+
+    def get_article_url(self, url):
+        sep = '&' if '?' in url else '?'
+        return url + f"{sep}view=print&seite=all"
 
     def get_browser(self):
         br = BasicNewsRecipe.get_browser(self)
         def select_form(form):
-            return True #form.attrs.get('action', None) == '/sso/login/login/nojs'
+            return form.attrs.get('action', None) == '/sso/login/login/nojs'
 
         if os.environ.get("HEISE_USER") is not None and os.environ.get("HEISE_PASSWORD") is not None:
             br.open('https://www.heise.de/sso/login')
             br.select_form(predicate=select_form)
-            br['login-user']   = os.environ["HEISE_USER"]
-            br['login-password'] = os.environ["HEISE_PASSWORD"]
+            ctrl_user = br.form.find_control(id='login-user')
+            ctrl_user.value = os.environ["HEISE_USER"]
+            ctrl_pwd = br.form.find_control(id='login-password')
+            ctrl_pwd.value = os.environ["HEISE_PASSWORD"]
             br.submit()
         else: print("HEISE_USER and HEISE_PASSWORD env parameter missing for login, skipped.")
         return br
