@@ -19,13 +19,14 @@ jobs:
             HEISE_PASSWORD: ${{ secrets.HEISE_PASSWORD }}
             RM_CONFIG: ${{ secrets.RM_CONFIG }}
         run: |
-            # bash generate-heise-epub.sh
             if [ -n "${RM_CONFIG:-}" ]; then
-              uname -m
-              wget https://github.com/ddvk/rmapi/releases/download/v0.0.32/rmapi-linux-ard64.tar.gz -o rmapi.gz
+              wget https://github.com/ddvk/rmapi/releases/download/v0.0.32/rmapi-linux-amd64.tar.gz -o rmapi.gz
               tar -xzf rmapi.gz
               chmod +x rmapi              
               echo "$RM_CONFIG" | base64 -d > rmapi.conf
               export RMAPI_CONFIG=rmapi.conf
-              ./rmapi put heise*.epub /Heise/
+            fi
+            bash generate-heise-epub.sh
+            if [ -n "${RM_CONFIG:-}" ]; then
+               ./rmapi put heise*.epub /Heise/
             fi
