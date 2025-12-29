@@ -59,7 +59,7 @@ class heiseDe(BasicNewsRecipe):
         from urllib.parse import urljoin
 
         # Get max article count from environment variable, default to 100
-        max_articles = int(os.environ.get("HEISE_ARTICLE_COUNT", "100"))
+        max_articles = int(os.environ.get("HEISE_ARTICLE_COUNT", "50"))
         self.log(f'Maximum articles to fetch: {max_articles}')
 
         articles = []
