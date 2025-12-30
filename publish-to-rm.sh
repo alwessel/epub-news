@@ -9,6 +9,7 @@ if [ -n "${RM_CONFIG:-}" ]; then
     aarch64|arm64) file=rmapi-linux-arm64.tar.gz ;;
     *) echo "Unknown arch"; exit 1;;
   esac
+  rm -f $file
   wget "https://github.com/ddvk/rmapi/releases/download/v0.0.32/$file"
   tar -xzf "$file"
   chmod +x rmapi

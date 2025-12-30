@@ -12,13 +12,13 @@ ebook-convert heise.recipe "$outputFile" -v \
     --embed-all-fonts               \
     --subset-embedded-fonts         \
     --unsmarten-punctuation         \
+    --disable-font-rescaling \
     --custom-size 1404x1872 \
     --unit devicepixel \
     --pdf-sans-family 'Noto Sans' \
     --pdf-serif-family 'Noto Serif' \
     --pdf-mono-family 'Noto Mono' \
-    --pdf-standard-font sans \
-    --pdf-mono-font-size 14 \
+    --pdf-standard-font mono \
     --pdf-page-margin-left 10 \
     --pdf-page-margin-right 10 \
     --pdf-page-margin-top 5 \
