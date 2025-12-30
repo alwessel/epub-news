@@ -20,8 +20,8 @@ jobs:
             RM_CONFIG: ${{ secrets.RM_CONFIG }}
         run: |
             if [ -n "${RM_CONFIG:-}" ]; then
-              wget https://github.com/ddvk/rmapi/releases/download/v0.0.32/rmapi-linux-amd64.tar.gz -o rmapi.gz
-              tar -xzf rmapi.gz
+              wget https://github.com/ddvk/rmapi/releases/download/v0.0.32/rmapi-linux-amd64.tar.gz
+              tar -xzf rmapi-linux-amd64.tar.gz
               chmod +x rmapi              
               echo "$RM_CONFIG" | base64 -d > rmapi.conf
               export RMAPI_CONFIG=rmapi.conf
