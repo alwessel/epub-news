@@ -1,13 +1,9 @@
 #!/bin/bash
 set -e
 
-# generate epub
-name=heise
-recipe=$name.recipe
-epub="$name-$(date '+%d.%m.%Y').epub"
+outputFile="heise-$(date '+%d.%m.%Y').pdf"
+rm -f $outputFile
 
-rm -f $epub
-# download as epub
-ebook-convert $recipe $epub -v --epub-max-image-size 400x800 --pretty-print
+ebook-convert heise.recipe $outputFile -v
 
-echo "Successfully generated: $epub"
+echo "Successfully generated: $outputFile"

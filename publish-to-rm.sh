@@ -14,7 +14,7 @@ if [ -n "${RM_CONFIG:-}" ]; then
   chmod +x rmapi
   echo "$RM_CONFIG" | base64 -d > rmapi.conf
   export RMAPI_CONFIG=rmapi.conf
-  ./rmapi put heise*.epub /Heise/
+  ./rmapi put heise* /Heise/
   echo "Successfully uploaded to reMarkable."
 else
   echo "RM_CONFIG not set, skipping upload to reMarkable."

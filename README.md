@@ -2,7 +2,7 @@
 
 This repo uses a GitHub Action to trigger the **generate-heise-epub.sh** script once a day.
 It's executed within the **[linuxserver/calibre:latest](https://github.com/linuxserver/docker-calibre)** docker image
-in order to use a Calibre recipe to export heise.de newsticker as an EPUB file.
+in order to use a Calibre recipe to export heise.de newsticker as an PDF / EPUB file.
 
 ## Usage
 
@@ -28,10 +28,13 @@ These vars also used by the GitHub Action.
 
 ### Upload to Remarkble (Optional)
 
-Within the Github Action, the generated EPUB can be automatically uploaded to a reMarkable tablet using [rmapi]().
+Within the Github Action, the generated EPUB 
+can be automatically uploaded to a reMarkable tablet using [rmapi](https://github.com/ddvk/rmapi).
 
 To enable this feature, set the Git Action secret environment variable 
-to be your personal rmapi config file content (base64 encoded): `export RM_CONFIG="$(base64 -w0 rmapi.conf)"`
+to be your personal rmapi config file content (base64 encoded):
+
+`export RM_CONFIG="$(base64 -w0 rmapi.conf)"`
 
 ## Schedule
 

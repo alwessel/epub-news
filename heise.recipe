@@ -26,6 +26,8 @@ class heiseDe(BasicNewsRecipe):
     remove_tags = [
         dict(name='header'),
         dict(name='footer'),
+        dict(name='p', attrs={'class': 'printversion__back-to-article printversion--hide'}),
+        dict(name='figure', attrs={'class': 'printversion__logo'}),
         dict(name='div', attrs={'id': 'wtma_teaser_ho_vertrieb_inline_branding'}),
         dict(name='div', attrs={'id': 'topnavimodule'}),
         dict(name='div', attrs={'class': 'notification-links'}),
