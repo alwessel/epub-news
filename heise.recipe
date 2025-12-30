@@ -18,6 +18,13 @@ class heiseDe(BasicNewsRecipe):
     timefmt = ' [%d %b %Y]'
     no_stylesheets = True
 
+    extra_css = '''
+        /* Add margin between articles in the table of contents */
+        .calibre_toc_item {
+            margin-bottom: 2em;
+        }
+    '''
+
     # Compress images to keep article size under control
     compress_news_images = True
     compress_news_images_max_size = 100  # Max size in KB per image (Calibre compresses to ~this size)
@@ -69,7 +76,7 @@ class heiseDe(BasicNewsRecipe):
         max_articles = int(os.environ.get("HEISE_ARTICLE_COUNT", "50"))
         self.log(f'Maximum articles to fetch: {max_articles}')
 
-        all_articles = []
+        page_sections = []
         base_url = 'https://www.heise.de'
         total_articles = 0
 
@@ -82,6 +89,8 @@ class heiseDe(BasicNewsRecipe):
 
             self.log(f'Fetching page {page_num}: {page_url}')
             soup = self.index_to_soup(page_url)
+
+            page_articles = []
 
             # Find all article elements
             for article in soup.find_all('article'):
@@ -124,14 +133,16 @@ class heiseDe(BasicNewsRecipe):
                         'url': self.get_article_url(url),
                         'description': description
                        }
-                all_articles.append(page)
-                self.log(f'Found page {page}')
+                page_articles.append(page)
                 total_articles += 1
 
-            self.log(f'Fetched page {page_num}, total articles so far: {total_articles}')
+            # Add this page's articles as a separate section if we found any
+            if page_articles:
+                page_sections.append((f'Page {page_num}', page_articles))
+                self.log(f'Fetched page {page_num}, {len(page_articles)} articles')
 
-        # Return all articles in a single section with empty title to avoid chapter breaks and TOC
-        return [('', all_articles)]
+        # Return articles grouped by page for proper TOC
+        return page_sections
 
     def get_article_url(self, url):
         sep = '&' if '?' in url else '?'
