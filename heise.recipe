@@ -24,7 +24,6 @@ class heiseDe(BasicNewsRecipe):
     scale_news_images = (1280, 720)  # Max width and height in pixels
 
     remove_tags = [
-        dict(name='header'),
         dict(name='footer'),
         dict(name='p', attrs={'class': 'printversion__back-to-article printversion--hide'}),
         dict(name='figure', attrs={'class': 'printversion__logo'}),
@@ -35,6 +34,12 @@ class heiseDe(BasicNewsRecipe):
        ]
 
     def preprocess_html(self, soup):
+        # Remove header tags that don't have the class "article-header"
+        for header in soup.find_all('header'):
+            header_classes = header.get('class', [])
+            if 'article-header' not in header_classes:
+                header.decompose()
+
         # Handle Heise's custom <a-img> lazy-loaded images
         for a_img in soup.find_all('a-img'):
             # Get the real image URL from the a-img element
@@ -64,7 +69,7 @@ class heiseDe(BasicNewsRecipe):
         max_articles = int(os.environ.get("HEISE_ARTICLE_COUNT", "50"))
         self.log(f'Maximum articles to fetch: {max_articles}')
 
-        articles = []
+        all_articles = []
         base_url = 'https://www.heise.de'
         total_articles = 0
 
@@ -79,7 +84,6 @@ class heiseDe(BasicNewsRecipe):
             soup = self.index_to_soup(page_url)
 
             # Find all article elements
-            page_articles = []
             for article in soup.find_all('article'):
                 if total_articles >= max_articles:
                     break
@@ -120,15 +124,14 @@ class heiseDe(BasicNewsRecipe):
                         'url': self.get_article_url(url),
                         'description': description
                        }
-                page_articles.append(page)
+                all_articles.append(page)
                 self.log(f'Found page {page}')
                 total_articles += 1
 
-            if page_articles:
-                articles.append((f'Seite {page_num}', page_articles))
-                self.log(f'Found {len(page_articles)} articles on page {page_num} (total: {total_articles})')
+            self.log(f'Fetched page {page_num}, total articles so far: {total_articles}')
 
-        return articles
+        # Return all articles in a single section with empty title to avoid chapter breaks and TOC
+        return [('', all_articles)]
 
     def get_article_url(self, url):
         sep = '&' if '?' in url else '?'
