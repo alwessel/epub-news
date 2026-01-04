@@ -16,10 +16,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+      - name: Mask Input URL for logs
+        run: |
+          API_INPUT_URL=$(jq -r '.inputs.url' $GITHUB_EVENT_PATH)
+          echo ::add-mask::$API_INPUT_URL
+          echo API_INPUT_URL=$API_INPUT_URL >> $GITHUB_ENV
       - name: Generate RM PDF (from URL input)
         env:
           RM_CONFIG: ${{ secrets.RM_CONFIG }}
         run: |
-          pdfFile="$(./generate-rm-pdf.sh \"${{ inputs.url }}\")"
+          pdfFile="$(./generate-rm-pdf.sh \"$API_INPUT_URL\")"
           ./publish-to-rm.sh "$pdfFile"
