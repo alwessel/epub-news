@@ -21,6 +21,5 @@ jobs:
         env:
           RM_CONFIG: ${{ secrets.RM_CONFIG }}
         run: |
-          set -euo pipefail
           pdfFile="$(./generate-rm-pdf.sh \"${{ inputs.url }}\")"
           ./publish-to-rm.sh "$pdfFile"
