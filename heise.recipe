@@ -74,7 +74,7 @@ class heiseDe(BasicNewsRecipe):
 
         # Get max article count from environment variable, default to 100
         max_articles = int(os.environ.get("HEISE_ARTICLE_COUNT", "50"))
-        self.log(f'Maximum articles to fetch: {max_articles}')
+        self.log(f'Maximum articles to fetch (using HEISE_ARTICLE_COUNT): {max_articles}')
 
         page_sections = []
         base_url = 'https://www.heise.de'
