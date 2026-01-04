@@ -25,5 +25,5 @@ jobs:
         env:
           RM_CONFIG: ${{ secrets.RM_CONFIG }}
         run: |
-          pdfFile="$(./generate-rm-pdf.sh \"$API_INPUT_URL\")"
+          export pdfFile="$(./generate-rm-pdf.sh \"$API_INPUT_URL\")"
           ./publish-to-rm.sh "$pdfFile"
