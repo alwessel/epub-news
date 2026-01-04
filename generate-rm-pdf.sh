@@ -67,4 +67,4 @@ ebook-convert "$src" "$outputFile" -v \
   --pdf-page-margin-bottom 5 \
   --preserve-cover-aspect-ratio
 
-echo "$outputFile"
+echo "Successfully generated: $outputFile"

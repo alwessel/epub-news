@@ -27,4 +27,4 @@ jobs:
         run: |
           OUTPUT_PATTERN="*-$(date '+%d.%m.%Y').pdf"
           ./generate-rm-pdf.sh "$API_INPUT_URL"
-          ./publish-to-rm.sh "$OUTPUT_PATTERN" /Github/
+          ./publish-to-rm.sh $OUTPUT_PATTERN /Github/
