@@ -27,5 +27,5 @@
     echo "RM_CONFIG is empty, us existing rmapi.conf"
   fi
 
-  ./rmapi -ni put "$UPLOAD_PATTERN" "$UPLOAD_DIR" --content-only
+  ./rmapi -ni put "$UPLOAD_PATTERN" "$UPLOAD_DIR"
   echo "Successfully uploaded to reMarkable."

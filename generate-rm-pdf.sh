@@ -48,12 +48,6 @@ stem="${stem%.*}"
 outputFile="${stem}-$(date '+%d.%m.%Y').pdf"
 rm -f "$outputFile"
 
-if [ "$ext" = "pdf" ]; then
-  cp -f "$src" "$outputFile"
-  echo "Successfully generated (copied): $outputFile"
-  exit 0
-fi
-
 ebook-convert "$src" "$outputFile" -v \
   --output-profile generic_eink_hd \
   --base-font-size 14 \
@@ -73,4 +67,4 @@ ebook-convert "$src" "$outputFile" -v \
   --pdf-page-margin-bottom 5 \
   --preserve-cover-aspect-ratio
 
-echo "Successfully generated: $outputFile"
+echo "$outputFile"

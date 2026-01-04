@@ -6,7 +6,7 @@ on:
     # it needs up to 15 min to start    
   workflow_dispatch:
 jobs:
-  generate-heise-epub:
+  generate-heise-epub-and-publish:
     runs-on: ubuntu-latest
     container:
       image: linuxserver/calibre:latest

@@ -1,0 +1,26 @@
+name: Generate RM PDF from given URL
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: URL to epub / PDF file
+        required: true
+        type: string
+
+jobs:
+  generate-rm-pdf-and-publish:
+    runs-on: ubuntu-latest
+    container:
+      image: linuxserver/calibre:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate RM PDF (from URL input)
+        env:
+          RM_CONFIG: ${{ secrets.RM_CONFIG }}
+        run: |
+          set -euo pipefail
+          pdfFile="$(./generate-rm-pdf.sh \"${{ inputs.url }}\")"
+          ./publish-to-rm.sh "$pdfFile"
