@@ -22,4 +22,4 @@ jobs:
           export FILE=heise-$(date '+%d.%m.%Y')
           ./generate-heise-epub.sh "$FILE.epub"
           ./generate-rm-pdf.sh "$FILE.epub"
-          ./publish-to-rm.sh "$FILE.pdf"
+          ./publish-to-rm.sh $FILE.pdf /Heise/
