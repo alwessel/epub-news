@@ -7,5 +7,5 @@ if [ -z "$outputFile" ]; then
 fi
 rm -f $outputFile
 
-ebook-convert heise.recipe "$outputFile"
+ebook-convert heise.recipe "$outputFile" --disable-font-rescaling
 echo "Successfully generated: $outputFile"
