@@ -1,0 +1,16 @@
+name = "rm-inbox"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+GH_REPO = "alwessel/epub-news"
+GH_WORKFLOW = "publish-rm.yml"
+GH_REF = "main"
+
+[[r2_buckets]]
+binding = "INBOX"
+bucket_name = "rm-inbox"
+
+# Secrets (set with `npx wrangler secret put <NAME>`):
+#   UPLOAD_TOKEN  shared token for SingleFile / HTTP Shortcuts / Kurzbefehle
+#   GH_TOKEN      fine-grained PAT, repository alwessel/epub-news, "Actions: Read and write"

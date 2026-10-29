@@ -27,5 +27,7 @@
     echo "RM_CONFIG is empty, us existing rmapi.conf"
   fi
 
+  # create the target folder if it does not exist yet
+  ./rmapi -ni mkdir "$UPLOAD_DIR" >/dev/null 2>&1 || true
   ./rmapi -ni put "$UPLOAD_PATTERN" "$UPLOAD_DIR"
   echo "Successfully uploaded to reMarkable."

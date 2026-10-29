@@ -4,9 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: URL to epub / PDF file
+        description: URL to epub / PDF / HTML file
         required: true
         type: string
+      title:
+        description: Document title on the reMarkable (optional)
+        required: false
+        type: string
+      folder:
+        description: Target folder on the reMarkable
+        required: false
+        type: string
+        default: /Inbox/
 
 jobs:
   generate-rm-pdf-and-publish:
@@ -16,15 +25,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Mask Input URL for logs
+      - name: Mask inputs for logs
         run: |
           API_INPUT_URL=$(jq -r '.inputs.url' $GITHUB_EVENT_PATH)
-          echo API_INPUT_URL="$API_INPUT_URL" >> $GITHUB_ENV
           echo ::add-mask::$API_INPUT_URL
+          echo API_INPUT_URL="$API_INPUT_URL" >> $GITHUB_ENV
+          API_INPUT_TITLE=$(jq -r '.inputs.title // ""' $GITHUB_EVENT_PATH)
+          if [ -n "$API_INPUT_TITLE" ]; then
+            echo ::add-mask::$API_INPUT_TITLE
+          fi
+          echo API_INPUT_TITLE="$API_INPUT_TITLE" >> $GITHUB_ENV
       - name: Generate RM PDF (from URL input)
+        id: generate
+        run: ./generate-rm-pdf.sh "$API_INPUT_URL" "$API_INPUT_TITLE"
+      - name: Publish to reMarkable
         env:
           RM_CONFIG: ${{ secrets.RM_CONFIG }}
-        run: |
-          OUTPUT_PATTERN="*-$(date '+%d.%m.%Y').pdf"
-          ./generate-rm-pdf.sh "$API_INPUT_URL"
-          ./publish-to-rm.sh $OUTPUT_PATTERN /Github/
+          RM_FILE: ${{ steps.generate.outputs.file }}
+          RM_FOLDER: ${{ inputs.folder || '/Inbox/' }}
+        run: ./publish-to-rm.sh "$RM_FILE" "$RM_FOLDER"
+      - name: Delete uploaded file from inbox
+        if: contains(env.API_INPUT_URL, '/f/') && contains(env.API_INPUT_URL, '?t=')
+        run: curl -fsS -X DELETE "$API_INPUT_URL"
