@@ -12,7 +12,7 @@
   esac
 
   rm -f "$file" rmapi
-  wget "https://github.com/ddvk/rmapi/releases/download/v0.0.32/$file"
+  wget "https://github.com/ddvk/rmapi/releases/download/v0.0.35/$file"
   tar -xzf "$file"
   chmod +x rmapi
 
