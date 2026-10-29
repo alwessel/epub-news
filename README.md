@@ -41,10 +41,12 @@ to be your personal rmapi config file content (base64 encoded):
 ## Schedule
 
 The GitHub Action runs via cron schedule, see .github/workflows/
+
 ## Send to reMarkable (Inbox)
 
-Pages and files can be sent from the browser or the share menu (macOS, Android) to the
-reMarkable. The content is fetched by the browser, so pages behind a paywall work as well.
+Pages and files can be sent from Firefox or the share menu (macOS, Android) to the
+reMarkable. The content is fetched by the browser, so pages behind a paywall and
+downloaded files work as well.
 
 ```
 SingleFile / HTTP Shortcuts / macOS Shortcuts
@@ -58,38 +60,146 @@ GitHub Action ── download → article extraction (HTML) → Calibre → rmap
 
 HTML pages are reduced to the article content with Calibre's bundled Readability
 (`extract-article.py`). If the extracted text is too short, the full page is converted.
+Uploaded files stay in R2 only until the workflow has published them, at most one day.
+
+### Secrets
+
+| Secret         | Stored in                            | Purpose                                              |
+|----------------|--------------------------------------|------------------------------------------------------|
+| `RM_CONFIG`    | GitHub Actions secret                | rmapi config (base64), see "Upload to Remarkble"     |
+| `GH_TOKEN`     | Cloudflare Worker secret             | Fine-grained PAT to trigger `publish-rm.yml`         |
+| `UPLOAD_TOKEN` | Cloudflare Worker secret and clients | Shared token for uploads to the worker               |
+
+None of them is part of the repository. `worker/wrangler.toml` only contains the
+repository name, workflow file and bucket name. For local tests with `wrangler dev`, put
+the secrets into `worker/.dev.vars` (ignored by git):
+
+```
+UPLOAD_TOKEN=...
+GH_TOKEN=...
+```
+
+The repository is public, so the Actions log is public as well. The workflow masks the
+download URL (it contains the per-file token) and the document title.
 
 ### Setup
 
-1. **GitHub token**: create a fine-grained personal access token for this repository
-   with the permission "Actions: Read and write".
-2. **Cloudflare**: create an R2 bucket `rm-inbox` and add a lifecycle rule that deletes
-   objects with the prefix `inbox/` after 1 day.
-3. **Deploy the worker**:
-   ```bash
-   cd worker
-   npx wrangler login
-   openssl rand -hex 32                      # use as UPLOAD_TOKEN
-   npx wrangler secret put UPLOAD_TOKEN
-   npx wrangler secret put GH_TOKEN
-   npx wrangler deploy
-   ```
-   The upload URL is `https://rm-inbox.<account>.workers.dev/upload`.
+Requirements: a Cloudflare account (free plan, R2 needs a payment method on file) and
+Node.js for `npx wrangler`.
+
+**1. GitHub token**
+
+GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens →
+Generate new token:
+- Repository access: only `alwessel/epub-news`
+- Permissions: "Actions: Read and write" (Metadata read-only is added automatically)
+- Expiration: e.g. 1 year, note the date for renewal
+
+**2. R2 bucket**
+
+```bash
+cd worker
+npx wrangler login
+npx wrangler r2 bucket create rm-inbox
+npx wrangler r2 bucket lifecycle add rm-inbox expire-inbox inbox/ --expire-days 1
+```
+
+The same is possible in the Cloudflare dashboard under R2 → Create bucket and
+bucket settings → Object lifecycle rules.
+
+**3. Worker secrets**
+
+```bash
+openssl rand -hex 32                 # generate the UPLOAD_TOKEN, keep it for the clients
+npx wrangler secret put UPLOAD_TOKEN # paste the generated token
+npx wrangler secret put GH_TOKEN     # paste the GitHub token from step 1
+npx wrangler secret list             # check that both are set
+```
+
+**4. Deploy**
+
+```bash
+npx wrangler deploy
+```
+
+The output shows the worker URL. The upload URL is
+`https://rm-inbox.<account>.workers.dev/upload`.
+
+**5. Test**
+
+```bash
+curl -X POST https://rm-inbox.<account>.workers.dev/upload \
+  -H "Authorization: Bearer <UPLOAD_TOKEN>" \
+  -F "file=@some.pdf"
+```
+
+The response is `{"ok":true,...}`, a run of "Generate RM PDF from given URL" starts in
+the Actions tab and the document appears in `/Inbox/` on the reMarkable after 2–3 minutes.
 
 ### Clients
 
-**SingleFile** (Firefox desktop and Android), options → Destination:
-- "upload to a REST Form API", URL: the upload URL, authorization token: `UPLOAD_TOKEN`
-- file field name: `file`, URL field name: `url`
-- File name template: `{page-title}.html`
+**SingleFile** (web pages, Firefox desktop and Android)
 
-**Android, [HTTP Shortcuts](https://http-shortcuts.rmy.ch/)**: POST to the upload URL with header
-`Authorization: Bearer <UPLOAD_TOKEN>` and a form data body with a file parameter `file`
-taken from the share menu. A second shortcut with a text parameter `url` sends public links.
+Install [SingleFile](https://addons.mozilla.org/firefox/addon/single-file/) (on Android via
+menu → Extensions). In the SingleFile options:
+- Destination: "upload to a REST Form API"
+  - URL: `https://rm-inbox.<account>.workers.dev/upload`
+  - authorization token: `UPLOAD_TOKEN` (without "Bearer", SingleFile adds it)
+  - file field name: `file`
+  - URL field name: `url`
+- File name → template: `{page-title}.html`
 
-**macOS, Shortcuts app**: a shortcut with input "Files and URLs", enabled for the share sheet
-and as a Finder quick action, using "Get contents of URL" with method POST, request body
-"Form", field `file` (file) or `url` (text) and the `Authorization` header.
+Save a page with the SingleFile button (desktop) or menu → Extensions → SingleFile (Android).
+The destination applies to every save. Use a separate SingleFile profile if you also archive
+pages locally.
+
+**Android: [HTTP Shortcuts](https://http-shortcuts.rmy.ch/)** (downloaded PDF/EPUB files)
+
+1. New shortcut → "Regular HTTP Shortcut", name e.g. "→ reMarkable"
+2. Method `POST`, URL: the upload URL
+3. Request headers: `Authorization` = `Bearer <UPLOAD_TOKEN>`
+4. Request body: "Form Data (multipart)", parameter `file` of type file, taken from the
+   share menu
+
+Share a downloaded file (download notification or files app) and pick the shortcut.
+Sharing from Firefox's PDF viewer only shares the URL, so download the file first.
+For public links, a second shortcut can send a text parameter `url` from a variable with
+"Share Into" enabled.
+
+**macOS: Shortcuts app** (downloaded PDF/EPUB files)
+
+1. New shortcut "Send to reMarkable", details: enable "Show in Share Sheet" and
+   "Use as Quick Action" (Finder), input type: Files
+2. Action "Get Contents of URL":
+   - URL: the upload URL, method `POST`
+   - Headers: `Authorization` = `Bearer <UPLOAD_TOKEN>`
+   - Request body: Form, field `file` of type File = Shortcut Input
+3. Optional: "Show Notification" with the result
+
+Use it in Finder via right-click → Quick Actions → "Send to reMarkable" or the share menu.
+
+### Rotating tokens
+
+- `UPLOAD_TOKEN`: generate a new one, `npx wrangler secret put UPLOAD_TOKEN`, then update
+  SingleFile, HTTP Shortcuts and the macOS shortcut.
+- `GH_TOKEN`: regenerate the fine-grained token on GitHub before it expires and run
+  `npx wrangler secret put GH_TOKEN`.
+
+### Troubleshooting
+
+| Symptom                                   | Cause                                                        |
+|-------------------------------------------|--------------------------------------------------------------|
+| `NetworkError` in SingleFile              | Upload URL without `https://`                                |
+| `404 not found: ...`                      | Upload URL does not end with `/upload`                       |
+| `401 unauthorized`                        | Wrong `UPLOAD_TOKEN` or missing `Bearer ` prefix             |
+| `415 unsupported file type`               | Only PDF, EPUB and HTML are accepted                         |
+| `413`                                     | File larger than 100 MB                                      |
+| `500 worker is not configured`            | `UPLOAD_TOKEN` or `GH_TOKEN` secret missing                  |
+| `502 workflow dispatch failed: 401/403`   | `GH_TOKEN` expired or without "Actions: Read and write"      |
+| `502 workflow dispatch failed: 404/422`   | `GH_REPO`, `GH_WORKFLOW` or `GH_REF` in `wrangler.toml` wrong |
+| Workflow fails, file not on the device    | Check the Actions log; for Calibre details set `DEBUG: 1` as env of the generate step |
+
+Live logs of the worker: `npx wrangler tail`.
 
 ### API
 
@@ -99,4 +209,5 @@ and as a Finder quick action, using "Get contents of URL" with method POST, requ
 | `GET`    | `/f/<id>/<name>` | `?t=<token>`          | Download for the workflow                 |
 | `DELETE` | `/f/<id>/<name>` | `?t=<token>`          | Removes the file after publishing         |
 
-Supported types: PDF, EPUB and HTML, up to 100 MB.
+Supported types: PDF, EPUB and HTML, up to 100 MB. Without `file`, the workflow downloads
+`url` itself, which only works for public links.

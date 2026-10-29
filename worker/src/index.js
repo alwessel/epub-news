@@ -21,14 +21,20 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
-    if (url.pathname === '/upload' && request.method === 'POST') {
-      return handleUpload(request, env, url);
+    if (url.pathname.replace(/\/+$/, '') === '/upload' && request.method === 'POST') {
+      // without CORS headers the browser extensions only see a "NetworkError"
+      try {
+        return await handleUpload(request, env, url);
+      } catch (error) {
+        console.error(error);
+        return json({ error: `upload failed: ${error.message}` }, 500);
+      }
     }
     const match = url.pathname.match(/^\/f\/([0-9a-f-]{36})\/([A-Za-z0-9._-]+)$/);
     if (match && (request.method === 'GET' || request.method === 'DELETE')) {
       return handleFile(request, env, `inbox/${match[1]}/${match[2]}`, url.searchParams.get('t'));
     }
-    return json({ error: 'not found' }, 404);
+    return json({ error: `not found: ${request.method} ${url.pathname} (uploads go to POST /upload)` }, 404);
   },
 };
 
