@@ -3,7 +3,7 @@
 This repo brings reading material to a remarkable-2 [device](https://remarkable.guide/index.html).
 There are two ways to get content onto it:
 
-1. **Scheduled newsticker export**: a GitHub Action generates an EPUB of the
+1. **Newsticker export**: a GitHub Action generates an EPUB of the
    https://www.heise.de/newsticker/classic using the `generate-heise-epub.sh` script.
    See "Generate Heise Newsticker EPUB" below.
 2. **Send to reMarkable (Inbox)**: web pages and downloaded files (PDF, EPUB) are sent on demand
@@ -46,7 +46,10 @@ to be your personal rmapi config file content (base64 encoded):
 
 ## Schedule
 
-The GitHub Action runs via cron schedule, see .github/workflows/
+The newsticker export (`.github/workflows/publish-heise.yml`) has no active schedule at the
+moment. The cron entries are commented out in the workflow, so the job only runs when started
+manually via `workflow_dispatch` in the Actions tab. To enable it again, uncomment the
+`schedule` block in the workflow.
 
 ## Send to reMarkable (Inbox)
 
