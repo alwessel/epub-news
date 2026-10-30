@@ -209,6 +209,33 @@ Use it in Finder via right-click → Quick Actions → "Send to reMarkable" or t
 - `GH_TOKEN`: regenerate the fine-grained token on GitHub before it expires and run
   `npx wrangler secret put GH_TOKEN`.
 
+### Renew GH_TOKEN (before it expires)
+
+The fine-grained GitHub token expires after the period chosen at creation (1 year suggested).
+After that, uploads fail with `502 workflow dispatch failed: 401/403` and nothing arrives on
+the reMarkable. The expiry date is listed under GitHub → Settings → Developer settings →
+Personal access tokens → Fine-grained tokens. GitHub also sends a reminder mail shortly
+before.
+
+1. On that page open the token and use "Regenerate token" (keeps repository and permissions),
+   or create a new one as described in Setup step 1: only `alwessel/epub-news`,
+   "Actions: Read and write". Choose an expiration, e.g. 1 year, and copy the token.
+2. Store it in the worker:
+
+   ```bash
+   cd worker
+   npx wrangler login          # only if the session expired
+   npx wrangler secret put GH_TOKEN
+   ```
+
+   Paste the token when asked. No redeploy is needed, the secret applies immediately.
+3. Update every other place that uses a token of its own, for example the HTTP Shortcuts button
+   that starts `publish-heise.yml`, see "Start manually from Android".
+4. Test with the `curl` call from Setup step 5: the response is `{"ok":true,...}` and a run of
+   "Generate RM PDF from given URL" starts in the Actions tab.
+
+`UPLOAD_TOKEN` and `RM_CONFIG` are not affected by this.
+
 ### Troubleshooting
 
 | Symptom                                   | Cause                                                        |
