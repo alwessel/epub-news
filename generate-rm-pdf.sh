@@ -111,7 +111,7 @@ ebook-convert "$src" "$outputFile" "${verbose[@]}" "${titleArgs[@]}" \
   --embed-all-fonts \
   --subset-embedded-fonts \
   --unsmarten-punctuation \
-  --disable-font-rescaling \
+  --extra-css "body,p,li,div{line-height:1.45 !important}" \
   --custom-size 1404x1872 \
   --unit devicepixel \
   --pdf-sans-family "Noto Sans" \

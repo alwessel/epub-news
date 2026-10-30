@@ -1,12 +1,18 @@
-# Export Heise Newsticker as EPUB
+# News and Articles for the reMarkable
 
-This repo uses a GitHub Action to generate a EPUB file of 
-the https://www.heise.de/newsticker/classic using the `generate-heise-epub.sh` script.
+This repo brings reading material to a remarkable-2 [device](https://remarkable.guide/index.html).
+There are two ways to get content onto it:
 
-After that it converts the EPUB to PDF optimized for a 
-remarkable-2 [device](https://remarkable.guide/index.html) using the `generate-rm-pdf.sh` script,
-followed by an upload to the configured reMarkable account using [rmapi](https://github.com/ddvk/rmapi)
-using the `publish-to-rm.sh` script.    
+1. **Scheduled newsticker export**: a GitHub Action generates an EPUB of the
+   https://www.heise.de/newsticker/classic using the `generate-heise-epub.sh` script.
+   See "Generate Heise Newsticker EPUB" below.
+2. **Send to reMarkable (Inbox)**: web pages and downloaded files (PDF, EPUB) are sent on demand
+   from Firefox or the share menu (macOS, Android) to a Cloudflare Worker, which triggers a
+   GitHub Action. See "Send to reMarkable (Inbox)" below.
+
+Both variants share the same publishing step: the content is converted to a PDF optimized for the
+reMarkable using the `generate-rm-pdf.sh` script, followed by an upload to the configured
+reMarkable account using [rmapi](https://github.com/ddvk/rmapi) with the `publish-to-rm.sh` script.
 
 The `generate-*` scripts expected to be executed inside **[linuxserver/calibre:latest](https://github.com/linuxserver/docker-calibre)** docker image
 in order to use a Calibre ebook-converter.
