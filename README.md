@@ -51,6 +51,21 @@ moment. The cron entries are commented out in the workflow, so the job only runs
 manually via `workflow_dispatch` in the Actions tab. To enable it again, uncomment the
 `schedule` block in the workflow.
 
+### Start manually from Android
+
+Besides the Actions tab ("Run workflow", also in the GitHub app), the workflow can be started
+with an [HTTP Shortcuts](https://http-shortcuts.rmy.ch/) button on the home screen. It calls the
+GitHub API directly, the inbox worker is not involved.
+
+1. Create a fine-grained GitHub token for this repository only with "Actions: Read and write".
+2. New shortcut → "Regular HTTP Shortcut", name e.g. "Heise → reMarkable"
+3. Method `POST`, URL:
+   `https://api.github.com/repos/alwessel/epub-news/actions/workflows/publish-heise.yml/dispatches`
+4. Request headers: `Authorization` = `Bearer <token>`, `Accept` = `application/vnd.github+json`
+5. Request body: "Custom Text", content type `application/json`, content `{"ref":"main"}`
+
+GitHub answers with `204` and no body. The run shows up in the Actions tab.
+
 ## Send to reMarkable (Inbox)
 
 Pages and files can be sent from Firefox or the share menu (macOS, Android) to the
